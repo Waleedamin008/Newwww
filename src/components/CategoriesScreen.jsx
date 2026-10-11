@@ -46,10 +46,12 @@ export default function CategoriesScreen({ onSelectCategory, onOpenGame }) {
 
       {/* Certificate of Prayers Promo Strip */}
       <div className="game-promo-strip" onClick={onOpenGame}>
-        <div className="promo-balloon-icon">📜</div>
-        <div className="promo-texts">
-          <h4>Earn the Certificate of Prayers</h4>
-          <p>Gather the sacred prayers of blessings to unveil the Presidential Certificate of Honor</p>
+        <div className="promo-left-row">
+          <div className="promo-balloon-icon">📜</div>
+          <div className="promo-texts">
+            <h4>Earn the Certificate of Prayers</h4>
+            <p>Gather the sacred prayers of blessings to unveil the Presidential Certificate of Honor</p>
+          </div>
         </div>
         <button 
           type="button" 

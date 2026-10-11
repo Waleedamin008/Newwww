@@ -43,7 +43,7 @@ export default function App() {
     <div className="app-container">
       <Header isMuted={isMuted} setIsMuted={setIsMuted} />
 
-      <main style={{ flex: 1, position: 'relative', width: '100%', height: '100%' }}>
+      <main className="main-content">
         {currentScreen === 'screen-1' && (
           <CountdownCandleScreen onComplete={handleCandleBlown} />
         )}

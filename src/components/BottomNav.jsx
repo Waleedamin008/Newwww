@@ -8,13 +8,19 @@ export default function BottomNav({ activeScreen, onSelectScreen }) {
     { id: 'screen-1', label: 'Candle', icon: '🎂' }
   ];
 
+  const isTabActive = (tabId) => {
+    if (activeScreen === tabId) return true;
+    if (tabId === 'screen-3' && activeScreen === 'screen-4') return true;
+    return false;
+  };
+
   return (
     <nav className="bottom-nav-bar">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           type="button"
-          className={`tab-btn ${activeScreen === tab.id ? 'active' : ''}`}
+          className={`tab-btn ${isTabActive(tab.id) ? 'active' : ''}`}
           onClick={() => onSelectScreen(tab.id)}
         >
           <span className="tab-icon">{tab.icon}</span>

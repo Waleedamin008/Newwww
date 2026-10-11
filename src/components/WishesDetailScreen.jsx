@@ -1,22 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { WISH_CATEGORIES } from '../data/wishes';
 import { sound } from '../utils/sound';
 
 export default function WishesDetailScreen({ categoryIndex, onBack, onNextCategory }) {
   const [wishIndex, setWishIndex] = useState(0);
   const [floatingHearts, setFloatingHearts] = useState([]);
+  const [slideDirection, setSlideDirection] = useState('');
+
+  const touchStartXRef = useRef(null);
+  const touchStartYRef = useRef(null);
 
   const category = WISH_CATEGORIES[categoryIndex] || WISH_CATEGORIES[0];
   const currentWish = category.wishes[wishIndex] || category.wishes[0];
 
   const handlePrev = () => {
     sound.playTwinkleSound(520);
+    setSlideDirection('slide-right');
     setWishIndex((prev) => (prev - 1 + category.wishes.length) % category.wishes.length);
+    setTimeout(() => setSlideDirection(''), 300);
   };
 
   const handleNext = () => {
     sound.playTwinkleSound(660);
+    setSlideDirection('slide-left');
     setWishIndex((prev) => (prev + 1) % category.wishes.length);
+    setTimeout(() => setSlideDirection(''), 300);
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartXRef.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+    
+    // Ensure horizontal swipe is dominant and exceeds 40px threshold
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+      if (deltaX < 0) {
+        handleNext();
+      } else {
+        handlePrev();
+      }
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
   };
 
   const handleHeartClick = (e) => {
@@ -48,13 +78,15 @@ export default function WishesDetailScreen({ categoryIndex, onBack, onNextCatego
         </span>
       ))}
 
-      {/* Top Nav */}
-      <div>
+      {/* Top Nav Header */}
+      <div className="detail-header-wrapper">
         <div className="detail-nav-header">
-          <button onClick={onBack} className="btn-back-nav">
-            <span>←</span> Back to Categories
+          <button onClick={onBack} className="btn-back-nav" aria-label="Back to Categories">
+            <span className="back-arrow">←</span>
+            <span className="back-text-full">Back to Categories</span>
+            <span className="back-text-short">Categories</span>
           </button>
-          <span className="cat-pill-indicator">{category.title}</span>
+          <span className="cat-pill-indicator" title={category.title}>{category.title}</span>
         </div>
 
         <div className="detail-title-group">
@@ -63,9 +95,13 @@ export default function WishesDetailScreen({ categoryIndex, onBack, onNextCatego
         </div>
       </div>
 
-      {/* Wish Card */}
+      {/* Wish Card with Touch-Swipe Enabled */}
       <div className="wish-card-container">
-        <div className="delicate-wish-card">
+        <div 
+          className={`delicate-wish-card ${slideDirection}`}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="wish-card-top">
             <span className="wish-index-pill">
               Wish {wishIndex + 1} of {category.wishes.length}
@@ -74,6 +110,7 @@ export default function WishesDetailScreen({ categoryIndex, onBack, onNextCatego
               onClick={handleHeartClick} 
               className="heart-reaction-btn" 
               title="Send Love"
+              aria-label="Send Love Reaction"
             >
               💖
             </button>
@@ -92,7 +129,7 @@ export default function WishesDetailScreen({ categoryIndex, onBack, onNextCatego
       </div>
 
       {/* Controls & Next Category */}
-      <div>
+      <div className="detail-bottom-controls">
         <div className="slider-controls">
           <button onClick={handlePrev} className="nav-arrow-btn" aria-label="Previous Wish">
             ‹
@@ -103,12 +140,19 @@ export default function WishesDetailScreen({ categoryIndex, onBack, onNextCatego
                 key={idx}
                 className={`slider-dot ${idx === wishIndex ? 'active' : ''}`}
                 onClick={() => setWishIndex(idx)}
+                aria-label={`Go to wish ${idx + 1}`}
               />
             ))}
           </div>
           <button onClick={handleNext} className="nav-arrow-btn" aria-label="Next Wish">
             ›
           </button>
+        </div>
+
+        <div className="swipe-hint-pill">
+          <span>👈</span>
+          <span>Swipe card or tap arrows</span>
+          <span>👉</span>
         </div>
 
         <button onClick={onNextCategory} className="btn-secondary-outline">
