@@ -4,7 +4,6 @@ import { sound } from '../utils/sound';
 
 export default function CategoriesScreen({ onSelectCategory, onOpenGame }) {
   const handleCategoryClick = (index) => {
-    sound.playTwinkleSound(660);
     onSelectCategory(index);
   };
 

@@ -35,7 +35,6 @@ export default function App() {
 
   // Screen 4: Advance to next category
   const handleNextCategory = () => {
-    sound.playTwinkleSound(660);
     setSelectedCategoryIndex((prev) => (prev + 1) % WISH_CATEGORIES.length);
   };
 

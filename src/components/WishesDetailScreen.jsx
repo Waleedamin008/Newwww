@@ -14,14 +14,12 @@ export default function WishesDetailScreen({ categoryIndex, onBack, onNextCatego
   const currentWish = category.wishes[wishIndex] || category.wishes[0];
 
   const handlePrev = () => {
-    sound.playTwinkleSound(520);
     setSlideDirection('slide-right');
     setWishIndex((prev) => (prev - 1 + category.wishes.length) % category.wishes.length);
     setTimeout(() => setSlideDirection(''), 300);
   };
 
   const handleNext = () => {
-    sound.playTwinkleSound(660);
     setSlideDirection('slide-left');
     setWishIndex((prev) => (prev + 1) % category.wishes.length);
     setTimeout(() => setSlideDirection(''), 300);
@@ -50,7 +48,6 @@ export default function WishesDetailScreen({ categoryIndex, onBack, onNextCatego
   };
 
   const handleHeartClick = (e) => {
-    sound.playTwinkleSound(880);
     const rect = e.currentTarget.getBoundingClientRect();
     const newHeart = {
       id: Date.now() + Math.random(),

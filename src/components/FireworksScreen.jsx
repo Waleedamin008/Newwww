@@ -87,7 +87,7 @@ export default function FireworksScreen({ onNext }) {
         trail: []
       });
 
-      sound.playFireworkSound(true);
+      sound.playFireworkLaunch();
     };
 
     const animate = () => {
@@ -130,6 +130,7 @@ export default function FireworksScreen({ onNext }) {
 
         if (r.y <= r.targetY || r.vy >= 0) {
           explodeAt(r.x, r.y, r.z, r.palette);
+          sound.playFireworkExplosion();
           rockets.splice(i, 1);
         }
       }
@@ -189,14 +190,13 @@ export default function FireworksScreen({ onNext }) {
       const x = e.clientX - rect.left - window.innerWidth / 2;
       const y = e.clientY - rect.top - window.innerHeight / 2;
       explodeAt(x, y, (Math.random() - 0.5) * 120);
-      sound.playFireworkSound(false);
+      sound.playFireworkExplosion();
     };
     canvas.addEventListener('pointerdown', handlePointerDown);
 
     // Reveal Tribute card after 2.4s
     const tributeTimer = setTimeout(() => {
       setShowTribute(true);
-      sound.playTwinkleSound(1046.5);
     }, 2400);
 
     return () => {

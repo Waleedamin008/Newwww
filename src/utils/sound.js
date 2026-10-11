@@ -1,6 +1,7 @@
 /**
  * Procedural Web Audio API Engine
- * Generates delicate celebration sound effects & soothing birthday music-box melody
+ * Generates realistic pyrotechnic fireworks, delicate candle breath puff,
+ * and a rich acoustic music-box Happy Birthday background melody.
  * 100% offline, zero external audio assets required.
  */
 
@@ -20,7 +21,7 @@ class SoundEngine {
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
   }
 
@@ -28,14 +29,16 @@ class SoundEngine {
     this.isMuted = !this.isMuted;
     if (this.isMuted) {
       this.stopBirthdayMusic();
+    } else {
+      this.startBirthdayMusic();
     }
     return this.isMuted;
   }
 
-  vibrate(ms = 25) {
+  vibrate(pattern = 25) {
     if ('vibrate' in navigator) {
       try {
-        navigator.vibrate(ms);
+        navigator.vibrate(pattern);
       } catch (e) {}
     }
   }
@@ -48,7 +51,7 @@ class SoundEngine {
     this.vibrate([40, 30, 70]);
 
     const duration = 1.1;
-    const bufferSize = this.ctx.sampleRate * duration;
+    const bufferSize = Math.floor(this.ctx.sampleRate * duration);
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
@@ -77,53 +80,165 @@ class SoundEngine {
     noise.stop(this.ctx.currentTime + duration);
   }
 
-  // Soft sparkle & subtle pastel fireworks burst
-  playFireworkSound(hasWhistle = true) {
+  // Helper: Textured noise burst generator for realistic explosions and roars
+  playNoiseBurst(startTime, duration, startCutoff, endCutoff, volume, filterType = 'lowpass') {
+    if (!this.ctx) return;
+    const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    let lastOut = 0.0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      lastOut = (lastOut + 0.02 * white) / 1.02;
+      data[i] = lastOut * 3.5 + white * 0.3;
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(startCutoff, startTime);
+    filter.frequency.exponentialRampToValueAtTime(Math.max(25, endCutoff), startTime + duration);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(volume, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    noise.start(startTime);
+    noise.stop(startTime + duration);
+  }
+
+  // Helper: Sizzling golden spark / willow crackle micro-snap
+  playMicroCrackle(startTime, frequency) {
+    if (!this.ctx) return;
+    const duration = 0.015 + Math.random() * 0.018;
+    const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(frequency, startTime);
+    filter.Q.setValueAtTime(3.5, startTime);
+
+    const gain = this.ctx.createGain();
+    const vol = 0.12 + Math.random() * 0.18;
+    gain.gain.setValueAtTime(vol, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    noise.start(startTime);
+    noise.stop(startTime + duration);
+  }
+
+  // Realistic Firework Mortar Launch (thud + ascending whistle/hiss)
+  playFireworkLaunch() {
     if (this.isMuted) return;
     this.init();
     if (!this.ctx) return;
-    this.vibrate(40);
 
     const t = this.ctx.currentTime;
 
-    if (hasWhistle) {
-      const osc = this.ctx.createOscillator();
-      const oscGain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(320, t);
-      osc.frequency.exponentialRampToValueAtTime(800, t + 0.28);
+    // Mortar launch thump
+    const mortarOsc = this.ctx.createOscillator();
+    const mortarGain = this.ctx.createGain();
+    mortarOsc.type = 'triangle';
+    mortarOsc.frequency.setValueAtTime(95, t);
+    mortarOsc.frequency.exponentialRampToValueAtTime(25, t + 0.14);
 
-      oscGain.gain.setValueAtTime(0.05, t);
-      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    mortarGain.gain.setValueAtTime(0.35, t);
+    mortarGain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
 
-      osc.connect(oscGain);
-      oscGain.connect(this.ctx.destination);
-      osc.start(t);
-      osc.stop(t + 0.28);
-    }
+    mortarOsc.connect(mortarGain);
+    mortarGain.connect(this.ctx.destination);
+    mortarOsc.start(t);
+    mortarOsc.stop(t + 0.15);
 
-    const expTime = t + (hasWhistle ? 0.25 : 0);
+    // Rising whistle hiss
+    const whistleOsc = this.ctx.createOscillator();
+    const whistleGain = this.ctx.createGain();
+    whistleOsc.type = 'sine';
+    const startFreq = 480 + Math.random() * 80;
+    whistleOsc.frequency.setValueAtTime(startFreq, t);
+    whistleOsc.frequency.exponentialRampToValueAtTime(startFreq * 2.3, t + 0.45);
 
-    // Warm soft thump
+    whistleGain.gain.setValueAtTime(0.001, t);
+    whistleGain.gain.linearRampToValueAtTime(0.12, t + 0.08);
+    whistleGain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+
+    whistleOsc.connect(whistleGain);
+    whistleGain.connect(this.ctx.destination);
+    whistleOsc.start(t);
+    whistleOsc.stop(t + 0.46);
+
+    // Air rush noise
+    this.playNoiseBurst(t, 0.45, 1200, 300, 0.08, 'bandpass');
+  }
+
+  // Realistic Firework Aerial Explosion (deep concussive boom + blast wave roar + echo + crackling spark tail)
+  playFireworkExplosion() {
+    if (this.isMuted) return;
+    this.init();
+    if (!this.ctx) return;
+    this.vibrate([45, 25, 45]);
+
+    const t = this.ctx.currentTime;
+
+    // 1. Heavy concussive sub-bass thump (punchy shockwave boom)
     const subOsc = this.ctx.createOscillator();
     const subGain = this.ctx.createGain();
     subOsc.type = 'sine';
-    subOsc.frequency.setValueAtTime(110, expTime);
-    subOsc.frequency.exponentialRampToValueAtTime(35, expTime + 0.5);
+    subOsc.frequency.setValueAtTime(140 + Math.random() * 20, t);
+    subOsc.frequency.exponentialRampToValueAtTime(32, t + 0.6);
 
-    subGain.gain.setValueAtTime(0.2, expTime);
-    subGain.gain.exponentialRampToValueAtTime(0.001, expTime + 0.5);
+    subGain.gain.setValueAtTime(0.75, t);
+    subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
 
     subOsc.connect(subGain);
     subGain.connect(this.ctx.destination);
-    subOsc.start(expTime);
-    subOsc.stop(expTime + 0.5);
+    subOsc.start(t);
+    subOsc.stop(t + 0.61);
 
-    // Light sparkling chime
-    this.playTwinkleSound(720 + Math.random() * 300);
+    // 2. Detonation blast wave roar (dense low-pass explosion rumble)
+    this.playNoiseBurst(t, 0.85, 650, 80, 0.65, 'lowpass');
+
+    // 3. Rolling reverberation echo
+    this.playNoiseBurst(t + 0.08, 1.35, 240, 60, 0.35, 'lowpass');
+
+    // 4. Sizzling golden spark / crackle trail
+    const crackleCount = 10 + Math.floor(Math.random() * 8);
+    for (let i = 0; i < crackleCount; i++) {
+      const crackleTime = t + 0.16 + Math.random() * 0.95;
+      const crackleFreq = 2200 + Math.random() * 2200;
+      this.playMicroCrackle(crackleTime, crackleFreq);
+    }
   }
 
-  // Crisp balloon pop
+  // Backward compatible wrapper
+  playFireworkSound(hasWhistle = true) {
+    if (hasWhistle) {
+      this.playFireworkLaunch();
+    } else {
+      this.playFireworkExplosion();
+    }
+  }
+
+  // Crisp balloon pop for mini game
   playPopSound() {
     if (this.isMuted) return;
     this.init();
@@ -148,52 +263,59 @@ class SoundEngine {
     osc.stop(t + 0.09);
   }
 
-  // Delicate celestial bell chime
-  playTwinkleSound(freq = 880) {
-    if (this.isMuted) return;
-    this.init();
-    if (!this.ctx) return;
-
-    const t = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(freq, t);
-    osc.frequency.exponentialRampToValueAtTime(freq * 1.3, t + 0.25);
-
-    gain.gain.setValueAtTime(0.12, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
-
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    osc.start(t);
-    osc.stop(t + 0.55);
+  // Tap sound removed per user request: "remove the sound on tap"
+  playTwinkleSound() {
+    // Intentionally silent
   }
 
-  // Individual acoustic note for music box
-  playNote(frequency, startTime, duration = 0.45, volume = 0.1) {
+  // Individual acoustic note for music box with rich harmonics & increased volume (0.32)
+  playNote(frequency, startTime, duration = 0.55, volume = 0.32) {
     if (!this.ctx || this.isMuted) return;
 
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    // Master note envelope
+    const noteGain = this.ctx.createGain();
+    noteGain.gain.setValueAtTime(0.0001, startTime);
+    noteGain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+    noteGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    noteGain.connect(this.ctx.destination);
 
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(frequency, startTime);
+    // 1. Fundamental warm sine tone
+    const osc1 = this.ctx.createOscillator();
+    const gain1 = this.ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(frequency, startTime);
+    gain1.gain.setValueAtTime(0.75, startTime);
+    osc1.connect(gain1);
+    gain1.connect(noteGain);
+    osc1.start(startTime);
+    osc1.stop(startTime + duration);
 
-    gain.gain.setValueAtTime(0.001, startTime);
-    gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    // 2. Second harmonic (octave chime overtone)
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(frequency * 2, startTime);
+    gain2.gain.setValueAtTime(0.28, startTime);
+    gain2.gain.exponentialRampToValueAtTime(0.01, startTime + duration * 0.75);
+    osc2.connect(gain2);
+    gain2.connect(noteGain);
+    osc2.start(startTime);
+    osc2.stop(startTime + duration);
 
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    osc.start(startTime);
-    osc.stop(startTime + duration);
+    // 3. Third harmonic (crystal sparkle)
+    const osc3 = this.ctx.createOscillator();
+    const gain3 = this.ctx.createGain();
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(frequency * 3, startTime);
+    gain3.gain.setValueAtTime(0.12, startTime);
+    gain3.gain.exponentialRampToValueAtTime(0.005, startTime + duration * 0.5);
+    osc3.connect(gain3);
+    gain3.connect(noteGain);
+    osc3.start(startTime);
+    osc3.stop(startTime + duration);
   }
 
-  // Soothing acoustic music-box melody for Happy Birthday
+  // Rich, soothing acoustic music-box melody for Happy Birthday
   startBirthdayMusic() {
     if (this.musicPlaying || this.isMuted) return;
     this.init();
@@ -215,8 +337,8 @@ class SoundEngine {
       let currentTime = this.ctx.currentTime + 0.1;
 
       melody.forEach(item => {
-        this.playNote(item.note, currentTime, item.d * 1.3, 0.08);
-        currentTime += item.d * 0.8;
+        this.playNote(item.note, currentTime, item.d * 1.4, 0.32);
+        currentTime += item.d * 0.85;
       });
 
       const totalDuration = (currentTime - this.ctx.currentTime) * 1000;
@@ -224,7 +346,7 @@ class SoundEngine {
         if (this.musicPlaying) {
           playSequence();
         }
-      }, totalDuration + 2500);
+      }, totalDuration + 2200);
     };
 
     playSequence();

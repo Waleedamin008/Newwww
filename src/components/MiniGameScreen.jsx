@@ -51,7 +51,6 @@ export default function MiniGameScreen({ onBack }) {
   const handlePop = (id, e) => {
     e.stopPropagation();
     sound.playPopSound();
-    sound.playTwinkleSound(650 + Math.random() * 350);
 
     // Confetti burst from click coordinates
     const x = e.clientX ? e.clientX / window.innerWidth : 0.5;
@@ -98,7 +97,6 @@ export default function MiniGameScreen({ onBack }) {
 
   const handleDownload = () => {
     setIsDownloading(true);
-    sound.playTwinkleSound(880);
     downloadPresidentialCertificate();
     setTimeout(() => {
       setIsDownloading(false);

@@ -7,23 +7,39 @@ export default function CountdownCandleScreen({ onComplete }) {
   const [isBlown, setIsBlown] = useState(false);
   const [smokePuffs, setSmokePuffs] = useState([]);
 
-  // Countdown timer logic
+  // Start background Happy Birthday music on candle screen (and on first user gesture)
+  useEffect(() => {
+    sound.startBirthdayMusic();
+    const handleGesture = () => {
+      sound.init();
+      sound.startBirthdayMusic();
+    };
+    window.addEventListener('pointerdown', handleGesture, { once: true });
+    window.addEventListener('click', handleGesture, { once: true });
+    window.addEventListener('touchstart', handleGesture, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', handleGesture);
+      window.removeEventListener('click', handleGesture);
+      window.removeEventListener('touchstart', handleGesture);
+    };
+  }, []);
+
+  // Countdown timer logic (without tap beeps)
   useEffect(() => {
     if (countdown > 0) {
-      sound.playTwinkleSound(440 + (3 - countdown) * 120);
       const timer = setTimeout(() => {
         setCountdown(prev => prev - 1);
       }, 1000);
       return () => clearTimeout(timer);
     } else {
       setCounting(false);
-      sound.playTwinkleSound(880);
     }
   }, [countdown]);
 
   const handleBlow = () => {
     if (isBlown) return;
     setIsBlown(true);
+    sound.startBirthdayMusic();
     sound.playBlowSound();
 
     // Spawn smoke puffs
